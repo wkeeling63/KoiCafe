@@ -1,0 +1,49 @@
+/dts-v1/;
+/plugin/;
+
+/*
+This overlay support koicafe pi sheild
+KOICAFE defaults to 50ms PWM period (one complete cycle on and off time) 
+and 250ms 100% duty cycle at the start of each feed event
+KOICAFE,PERIOD_MS=#,START_MS=#
+*/
+
+/ {
+	compatible = "brcm,bcm2835";
+/* change function of pin 12 to alt 4 PWM0 */
+	fragment@0 {
+		target = <&gpio>;
+		__overlay__ {
+			williespwm_pins: williespwm_pins {
+				brcm,pins = <12>;
+				brcm,function = <4>;
+			};
+		};
+	};
+/*  need status to turn on the pwm device */
+	fragment@1 {
+		target = <&pwm>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+/* this instantiates the platform device and it properties */
+	fragment@2 {
+		target-path = "/";
+		__overlay__ {
+			williespwm: williespwm {
+				compatible = "williespwm";
+				pwms = <&pwm 0 3500000 0>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&williespwm_pins>;
+				willies_parms = <50 250>;
+				status = "okay";
+			};
+		};
+	};
+/* allow overrides to the default values of willies_parms property */
+	__overrides__ {
+		period_ms 	= <&williespwm>,"willies_parms:0";
+		start_ms 	= <&williespwm>,"willies_parms:4";
+	};
+};
